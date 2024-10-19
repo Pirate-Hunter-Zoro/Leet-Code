@@ -11422,6 +11422,77 @@ func findCriticalAndPseudoCriticalEdges(n int, edges [][]int) [][]int {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /*
+You are given an integer array nums and an integer target.
+
+You want to build an expression out of nums by adding one of the symbols '+' and '-' before each integer in nums and then concatenate all the integers.
+
+For example, if nums = [2, 1], you can add a '+' before 2 and a '-' before 1 and concatenate them to build the expression "+2-1".
+Return the number of different expressions that you can build, which evaluates to target.
+
+Link:
+https://leetcode.com/problems/target-sum/description/?envType=problem-list-v2&envId=dynamic-programming
+*/
+func findTargetSumWays(nums []int, target int) int {
+	// Answer the question: If I put a plus here, how many ways can I achieve the target sum?
+    put_plus := make([]map[int]int, len(nums))
+	put_minus := make([]map[int]int, len(nums))
+	for i := 0; i < len(nums); i++ {
+		put_plus[i] = make(map[int]int)
+		put_minus[i] = make(map[int]int)
+	}
+
+	return topDownPutPlus(0, nums, put_plus, put_minus, target) + topDownPutMinus(0, nums, put_plus, put_minus, target)
+}
+
+/*
+Top-down helper method for above question
+*/
+func topDownPutPlus(i int, nums []int, put_plus []map[int]int, put_minus []map[int]int, target int) int {
+	_, ok := put_plus[i][target]
+	if !ok {
+		// Need to solve this problem
+		if i == len(put_plus) - 1 {
+			// Base case
+			if nums[i] == target {
+				put_plus[i][target] = 1
+			} else {
+				put_plus[i][target] = 0
+			}
+		} else {
+			// Non base case
+			put_plus[i][target] = topDownPutPlus(i+1, nums, put_plus, put_minus, target - nums[i]) + topDownPutMinus(i+1, nums, put_plus, put_minus, target - nums[i])
+		}
+	}
+
+	return put_plus[i][target]
+}
+
+/*
+Top-down helper method for above question
+*/
+func topDownPutMinus(i int, nums []int, put_plus []map[int]int, put_minus []map[int]int, target int) int {
+	_, ok := put_minus[i][target]
+	if !ok {
+		// Need to solve this problem
+		if i == len(put_minus) - 1 {
+			// Base case
+			if nums[i] == -target {
+				put_minus[i][target] = 1
+			} else {
+				put_minus[i][target] = 0
+			}
+		} else {
+			// Non base case
+			put_minus[i][target] = topDownPutPlus(i+1, nums, put_plus, put_minus, target + nums[i]) + topDownPutMinus(i+1, nums, put_plus, put_minus, target + nums[i])
+		}
+	}
+
+	return put_minus[i][target]
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
 There is an undirected tree with n nodes labeled from 0 to n - 1. 
 You are given the integer n and a 2D integer array edges of length n - 1, where edges[i] = [u_i, v_i, w_i] indicates that there is an edge between nodes u_i and v_i with weight w_i in the tree.
 

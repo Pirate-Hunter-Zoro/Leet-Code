@@ -4831,6 +4831,30 @@ func TestSurvivedRobotsHealths(t *testing.T) {
 	testResults(t, f, inputs, expected_outputs)
  }
 
+ func TestFindTargetSumWays(t *testing.T) {
+	type input struct {
+		nums []int
+		target int
+	}
+	inputs := []input{
+		{[]int{1,1,1,1,1}, 3},
+		{[]int{1}, 1},
+		{[]int{9,7,0,3,9,8,6,5,7,6}, 2},
+	}
+
+	expected_outputs := []int{
+		5,
+		1,
+		40,
+	}
+
+	f := func(i input) int {
+		return findTargetSumWays(i.nums, i.target)
+	}
+
+	testResults(t, f, inputs, expected_outputs)
+ }
+
  func TestMinOperationsQueries(t *testing.T) {
 	type input struct {
 		n int
