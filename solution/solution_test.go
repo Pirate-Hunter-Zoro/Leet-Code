@@ -4864,15 +4864,42 @@ func TestSurvivedRobotsHealths(t *testing.T) {
 	inputs := []input{
 		{7, [][]int{{0,1,1},{1,2,1},{2,3,1},{3,4,2},{4,5,2},{5,6,2}}, [][]int{{0,3},{3,6},{2,6},{0,6}}},
 		{8, [][]int{{1,2,6},{1,3,4},{2,4,6},{2,5,3},{3,6,6},{3,0,8},{7,0,2}}, [][]int{{4,6},{0,4},{6,5},{7,4}}},
+		{6, [][]int{{1,3,3},{4,1,3},{0,3,5},{5,4,2},{2,5,1}}, [][]int{{2,1},{2,0},{3,0},{2,2},{2,5},{4,1},{5,2}}},
+		{3, [][]int{{1,2,5},{0,2,13}}, [][]int{{0,0},{0,1},{0,2},{1,0},{1,1},{1,2},{2,0},{2,1},{2,2}}},
 	}
 
 	expected_outputs := [][]int{
 		{0,0,1,3},
 		{1,2,2,3},
+		{2,3,0,0,0,0,0},
+		{0,1,0,1,0,0,0,0,0},
 	}
 
 	f := func(i input) []int{
 		return minOperationsQueries(i.n, i.edges, i.queries)
+	}
+
+	testResults(t, f, inputs, expected_outputs)
+ }
+
+ func TestNumberOfWays(t *testing.T) {
+	type input struct {
+		s string
+		t string
+		k int64
+	}
+	inputs := []input{
+		{"abcd","cdab",2},
+		{"ababab","ababab",1},
+	}
+
+	expected_outputs := []int{
+		2,
+		2,
+	}
+
+	f := func(i input) int {
+		return numberOfWays(i.s, i.t, i.k)
 	}
 
 	testResults(t, f, inputs, expected_outputs)

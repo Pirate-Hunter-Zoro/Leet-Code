@@ -11574,7 +11574,15 @@ func minOperationsQueries(n int, edges [][]int, queries [][]int) []int {
 	}
 	
 	// Now we can build up to find out what the 2^jth ancestor of each node is...
+	nodes := make([]int, n)
 	for i:=0; i<n; i++ {
+		nodes[i] = i
+	}
+	sort.SliceStable(nodes, func(i, j int) bool {
+		return depth[nodes[i]] < depth[nodes[j]]
+	})
+	for _, i := range nodes {
+		// Do this for nodes in increasing depth order
 		for j:=1; j<max_j; j++ {
 			if ancestors[i][j-1] != -1 {
 				// My 2^jth ancestor is the 2^(j-1)th ancestor of MY 2^(j-1)th ancestor
@@ -11625,32 +11633,42 @@ func findLCA(a int, b int, ancestors [][]int, depth []int) int {
 		a, b = b, a
 	}
 	depth_difference := depth[a] - depth[b]
-	right := len(ancestors)
-	left := 0
-	// Binary search for the depth of the least common ancestor
-	for left < right {
-		mid := (left + right) / 2
-		a_ancestor := findKthAncestor(a, mid, ancestors)
-		if a_ancestor == -1 {
-			// Looking too high
-			right = mid
-		} else {
-			b_ancestor := findKthAncestor(b, mid - depth_difference, ancestors)
-			if b_ancestor == a_ancestor {
-				// Try looking lower
-				left = mid
-				if right == mid + 1 {
-					// Avoid an infinite loop - this ancestor is the lowest common ancestor 
-					return b_ancestor
-				}
-			} else {
-				// Not looking high enough
-				left = mid + 1
+	a = findKthAncestor(a, depth_difference, ancestors)
+	// Now a and b are at the same level
+	if a == b {
+		return a
+ 	} else {
+		highest_power_of_2 := int(math.Log2(float64(len(ancestors))))
+		for j:=highest_power_of_2; j>=0; j-- {
+			if ancestors[a][j] != ancestors[b][j] {
+				// We need to move up higher to reach the LCA
+				a = ancestors[a][j]
+				b = ancestors[b][j]
 			}
+			// Otherwise, a and b will not change and we will try not looking as far ahead on the next iteration
 		}
+		return ancestors[a][0]
 	}
+}
 
-	return findKthAncestor(a, left, ancestors)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+You are given two strings s and t of equal length n. 
+You can perform the following operation on the string s:
+- Remove a suffix of s of length l where 0 < l < n and append it at the start of s.
+- For example, let s = 'abcd' then in one operation you can remove the suffix 'cd' and append it in front of s making s = 'cdab'.
+
+You are also given an integer k. 
+Return the number of ways in which s can be transformed into t in exactly k operations.
+
+Since the answer can be large, return it modulo 10^9 + 7.
+
+Link:
+https://leetcode.com/problems/string-transformation/description/
+*/
+func numberOfWays(s string, t string, k int64) int {
+    return 0
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
