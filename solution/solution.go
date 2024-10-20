@@ -11507,9 +11507,150 @@ Note that:
 
 Link:
 https://leetcode.com/problems/minimum-edge-weight-equilibrium-queries-in-a-tree/description/
+
+Inpsiration:
+The LeetCode hints
+Also this video: https://www.youtube.com/watch?v=oib-XsjFa-M
+Also this video: https://www.youtube.com/watch?v=dOAxrhAUIhA&t=186s
 */
 func minOperationsQueries(n int, edges [][]int, queries [][]int) []int {
-    return []int{}
+	// Firstly, we need some connections
+	connections := make([]map[int]int, n)
+	for i:=0; i<n; i++ {
+		connections[i] = make(map[int]int)
+	}
+	for _, edge := range edges {
+		first, second, weight := edge[0], edge[1], edge[2]
+		connections[first][second] = weight
+		connections[second][first] = weight
+	}
+
+	// We need to keep track of ancestors
+	// ancestors[i][j] answers the question - what is the 2^jth ancestor of node i?
+	ancestors := make([][]int, n)
+	max_j := int(math.Log2(float64(n))) + 1
+	for i:=0; i<n; i++ {
+		ancestors[i] = make([]int, max_j)
+		for j:=0; j<max_j; j++ {
+			ancestors[i][j] = -1
+		}
+	}
+
+	// For every node, we need to count the frequency of each edge weight on the path from 0 to that node
+	// From the problem constraints, there are only 26 possible weights
+	weight_frequencies := make([][]int, n)
+	for i:=0; i<len(weight_frequencies); i++ {
+		weight_frequencies[i] = make([]int, 27) // Make length one greater than 26 so we can index by weight directly
+	}
+
+
+	// Now we can use DFS to create the parent/child hierarchy
+	// Let's make node 0 the root, and find each node's children
+	node_stack := linked_list.NewStack[int]()
+	node_stack.Push(0)
+	seen := make([]bool, n)
+	// We also want to record the depth of each node
+	depth := make([]int, n) 
+	for !node_stack.Empty() {
+		next := node_stack.Pop()
+		seen[next] = true
+		for neighbor, weight := range connections[next] {
+			// If a connected node has already been seen, it's the parent of this node
+			if !seen[neighbor] {
+				// Then this node will be the parent of the neighbor
+				node_stack.Push(neighbor)
+				ancestors[neighbor][0] = next
+				depth[neighbor] = depth[next] + 1
+				// The path from 0 to this node has an extra edge of the given weight
+				weight_frequencies[neighbor][weight] = weight_frequencies[next][weight] + 1
+				for other_weight := 1; other_weight <= 26; other_weight++ {
+					// All other weight frequencies are the same as on the path from 0 to the parent
+					if other_weight != weight {
+						weight_frequencies[neighbor][other_weight] = weight_frequencies[next][other_weight]
+					}
+				}
+			}
+		}
+	}
+	
+	// Now we can build up to find out what the 2^jth ancestor of each node is...
+	for i:=0; i<n; i++ {
+		for j:=1; j<max_j; j++ {
+			if ancestors[i][j-1] != -1 {
+				// My 2^jth ancestor is the 2^(j-1)th ancestor of MY 2^(j-1)th ancestor
+				ancestors[i][j] = ancestors[ancestors[i][j-1]][j-1]
+			}
+		}
+	}
+
+	answers := make([]int, len(queries))
+	for idx, query := range queries {
+		a, b := query[0], query[1]
+		edge_count := 0
+		largest_weight_frequency := 0
+		for weight := 1; weight <= 26; weight++ {
+			a_to_b_freq := weight_frequencies[a][weight] + weight_frequencies[b][weight] - 2*weight_frequencies[findLCA(a, b, ancestors, depth)][weight]
+			largest_weight_frequency = max(largest_weight_frequency, a_to_b_freq)
+			edge_count += a_to_b_freq
+		}
+		answers[idx] = edge_count - largest_weight_frequency
+	}
+    return answers
+}
+
+/*
+Given node a, find it's kth ancestor
+*/
+func findKthAncestor(a int, k int, ancestors [][]int) int {
+	ancestor := a
+	current := k
+	for current != 0 {
+		highest_power_of_2 := int(math.Log2(float64(current)))
+		ancestor = ancestors[ancestor][highest_power_of_2]
+		if ancestor == -1 {
+			return ancestor
+		}
+		current = current - (1 << highest_power_of_2)
+	}
+
+	return ancestor
+}
+
+/*
+Given nodes a and b, find the lowest common ancestor of a and b
+*/
+func findLCA(a int, b int, ancestors [][]int, depth []int) int {
+	// Refer to a as the deeper node
+	if depth[a] < depth[b] {
+		a, b = b, a
+	}
+	depth_difference := depth[a] - depth[b]
+	right := len(ancestors)
+	left := 0
+	// Binary search for the depth of the least common ancestor
+	for left < right {
+		mid := (left + right) / 2
+		a_ancestor := findKthAncestor(a, mid, ancestors)
+		if a_ancestor == -1 {
+			// Looking too high
+			right = mid
+		} else {
+			b_ancestor := findKthAncestor(b, mid - depth_difference, ancestors)
+			if b_ancestor == a_ancestor {
+				// Try looking lower
+				left = mid
+				if right == mid + 1 {
+					// Avoid an infinite loop - this ancestor is the lowest common ancestor 
+					return b_ancestor
+				}
+			} else {
+				// Not looking high enough
+				left = mid + 1
+			}
+		}
+	}
+
+	return findKthAncestor(a, left, ancestors)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
